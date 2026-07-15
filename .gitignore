@@ -22,3 +22,6 @@ venv.bak/
 
 # macOS
 .DS_Store
+
+# output
+out/
