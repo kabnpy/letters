@@ -26,9 +26,6 @@ class EmotionalSignature(BaseModel):
     dominant_tone: str
     secondary_tone: str
     sentiment_score: float
-    relationship_stage: Literal[
-        "introduction", "building_rapport", "deep_vulnerability", "establishing_comfort"
-    ]
     topics_discussed: list[str]
     memorable_internal_phrases: list[str]
 
@@ -46,6 +43,16 @@ class Letter(BaseModel):
     temporal: TimeMetrics | None = None
     metrics: TextMetrics | None = None
     emotional_signature: EmotionalSignature | None = None
+    relationship_stage: (
+        Literal[
+            "introduction",
+            "building_rapport",
+            "deep_vulnerability",
+            "establishing_comfort",
+        ]
+        | None
+    ) = None
+    analysis_status: Literal["pending", "success", "failed"] = "pending"
 
 
 class RelationshipArchive(BaseModel):

@@ -1,3 +1,4 @@
+import logging
 import re
 import sys
 from datetime import datetime, timezone
@@ -7,6 +8,8 @@ from config import (
     RAW_LETTERS_FILE,
 )
 from models import Letter, RelationshipArchive, TextMetrics, TimeMetrics
+
+logger = logging.getLogger(__name__)
 
 
 def calculate_text_metrics(text: str) -> TextMetrics:
@@ -38,7 +41,7 @@ def calculate_text_metrics(text: str) -> TextMetrics:
 
 def enrich_letters() -> None:
     """Read unprocessed letters, inject temporal and textual metrics, and save."""
-    print(f"parsing {RAW_LETTERS_FILE}...")
+    logger.info(f"parsing {RAW_LETTERS_FILE}...")
 
     if not RAW_LETTERS_FILE.exists():
         raise FileNotFoundError(
@@ -92,12 +95,14 @@ def enrich_letters() -> None:
     with ENRICHED_BASE_FILE.open("w", encoding="utf-8") as file:
         file.write(enriched_archive.model_dump_json(indent=2))
 
-    print(f"successfully enriched {enriched_archive.total_letters} letters into: {ENRICHED_BASE_FILE}")
+    logger.info(
+        f"successfully enriched {enriched_archive.total_letters} letters into: {ENRICHED_BASE_FILE}"
+    )
 
 
 if __name__ == "__main__":
     try:
         enrich_letters()
-    except Exception as exc:
-        print(f"enrich stage failed: {exc}")
+    except Exception:
+        logger.exception("enrich stage failed")
         sys.exit(1)

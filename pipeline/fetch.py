@@ -1,3 +1,4 @@
+import logging
 import sys
 import time
 from datetime import datetime, timezone
@@ -5,8 +6,16 @@ from datetime import datetime, timezone
 import requests
 from pydantic import BaseModel, ValidationError
 
-from config import RAW_LETTERS_FILE, SLOWLY_POST_ID, SLOWLY_TOKEN, SLOWLY_USER_ID
+from config import (
+    RAW_LETTERS_FILE,
+    SLOWLY_POST_ID,
+    SLOWLY_TOKEN,
+    SLOWLY_USER_ID,
+    check_slowly_config,
+)
 from models import Letter, RelationshipArchive
+
+logger = logging.getLogger(__name__)
 
 
 class _RawLetter(BaseModel):
@@ -43,7 +52,7 @@ def fetch_letters() -> list[Letter]:
     url = f"https://api.getslowly.com/friend/{SLOWLY_POST_ID}/all"
     current_page = 1
 
-    print(f"fetching letters for post {SLOWLY_POST_ID}...")
+    logger.info(f"fetching letters for post {SLOWLY_POST_ID}...")
 
     while url:
         try:
@@ -75,7 +84,7 @@ def fetch_letters() -> list[Letter]:
                 )
 
             current_page = payload.comments.current_page
-            print(
+            logger.info(
                 f"page {current_page}: fetched {len(page_letters)} letters (total: {len(letters)})"
             )
 
@@ -103,11 +112,12 @@ def write_export(letters: list[Letter]) -> None:
     with RAW_LETTERS_FILE.open("w", encoding="utf-8") as file:
         file.write(archive.model_dump_json(indent=2))
 
-    print(f"exported {len(letters)} letters to {RAW_LETTERS_FILE}")
+    logger.info(f"exported {len(letters)} letters to {RAW_LETTERS_FILE}")
 
 
 def fetch_letters_stage() -> None:
     """Entry point for the fetch stage of the pipeline."""
+    check_slowly_config()
     letters = fetch_letters()
     write_export(letters)
 
@@ -115,6 +125,6 @@ def fetch_letters_stage() -> None:
 if __name__ == "__main__":
     try:
         fetch_letters_stage()
-    except Exception as exc:
-        print(f"fetch stage failed: {exc}")
+    except Exception:
+        logger.exception("fetch stage failed")
         sys.exit(1)

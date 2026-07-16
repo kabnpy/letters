@@ -1,9 +1,17 @@
+import logging
 import os
 from pathlib import Path
 
 from dotenv import load_dotenv
 
 load_dotenv()
+
+logging.basicConfig(
+    level=os.environ.get("LOG_LEVEL", "INFO").upper(),
+    format="%(asctime)s %(levelname)-8s %(name)s: %(message)s",
+    datefmt="%H:%M:%S",
+)
+
 
 BASE_DIR = Path(__file__).resolve().parent
 OUT_DIR = BASE_DIR / "out"
@@ -14,6 +22,7 @@ OUT_DIR.mkdir(exist_ok=True)
 RAW_LETTERS_FILE = OUT_DIR / os.environ.get("OUT_FILE", "letters.json")
 ENRICHED_BASE_FILE = OUT_DIR / "intermediate_01.json"
 SEMANTIC_ANALYSIS_FILE = OUT_DIR / "intermediate_02.json"
+PROGRESSION_FILE = OUT_DIR / "intermediate_03.json"
 FINAL_PAYLOAD_FILE = OUT_DIR / "wrapped_payload.json"
 
 # llm configuration
@@ -25,16 +34,17 @@ ACTIVE_BACKEND: str = os.environ.get("ACTIVE_BACKEND", "local")
 SLOWLY_TOKEN = os.environ.get("SLOWLY_TOKEN", "")
 SLOWLY_POST_ID = os.environ.get("SLOWLY_POST_ID", "")
 _raw_user_id = os.environ.get("SLOWLY_USER_ID", "")
+SLOWLY_USER_ID = int(_raw_user_id) if _raw_user_id else 0
 
-if not SLOWLY_TOKEN or not SLOWLY_POST_ID or not _raw_user_id:
-    raise EnvironmentError(
-        "missing critical environment variables!\n"
-        "ensure SLOWLY_TOKEN, SLOWLY_USER_ID, and SLOWLY_POST_ID are defined in your .env file.\n"
-        "example:\n"
-        "SLOWLY_TOKEN='your_jwt_here'\n"
-        "SLOWLY_POST_ID='your_post_id'\n"
-        "SLOWLY_USER_ID='your_user_id'"
-    )
 
-SLOWLY_USER_ID = int(_raw_user_id)
-del _raw_user_id
+def check_slowly_config() -> None:
+    """Validate that required environment variables for the Slowly API are present."""
+    if not SLOWLY_TOKEN or not SLOWLY_POST_ID or not _raw_user_id:
+        raise EnvironmentError(
+            "missing critical environment variables!\n"
+            "ensure SLOWLY_TOKEN, SLOWLY_USER_ID, and SLOWLY_POST_ID are defined in your .env file.\n"
+            "example:\n"
+            "SLOWLY_TOKEN='your_jwt_here'\n"
+            "SLOWLY_POST_ID='your_post_id'\n"
+            "SLOWLY_USER_ID='your_user_id'"
+        )
